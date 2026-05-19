@@ -2,6 +2,12 @@
 
 Automated evaluation pipeline for RAG and agentic LLM systems. Define test cases in YAML, run them across multiple model providers, score outputs with LLM-as-judge metrics, persist results to Postgres, and ship a CI/CD gate that blocks hallucination regressions.
 
+Most LLM pipelines ship without any evaluation layer. When hallucinations 
+slip through, there's no systematic way to catch regressions before they 
+reach production. This harness fixes that — define your test cases in YAML 
+once, run them across any model provider, and block bad deployments 
+automatically via a CI/CD gate.
+
 ```
 evals/tasks/*.yaml  →  RAG pipeline  →  LLM-as-judge scoring  →  Postgres  →  dashboard + CI gate
 ```
@@ -42,7 +48,7 @@ evals/tasks/*.yaml  →  RAG pipeline  →  LLM-as-judge scoring  →  Postgres 
 **1. Clone and install**
 
 ```bash
-git clone https://github.com/yourusername/llm-eval-harness.git
+git clone https://github.com/kshitijqwerty/llm-eval-harness.git
 cd llm-eval-harness
 pip install -r requirements.txt
 ```
