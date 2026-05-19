@@ -1,0 +1,16 @@
+name: sample_rag_eval
+description: Tests a customer support RAG system
+model_providers:
+  - ollama        # local
+  - groq          # free API
+
+cases:
+  - id: q001
+    question: "What is the refund policy for digital products?"
+    context: "Digital products are non-refundable once downloaded. Exceptions apply if the product is defective."
+    expected: "Digital products cannot be refunded after download, unless defective."
+
+  - id: q002
+    question: "How long does shipping take?"
+    context: "Standard shipping takes 5-7 business days. Express shipping takes 1-2 business days."
+    expected: "Standard shipping is 5-7 days; express is 1-2 business days."

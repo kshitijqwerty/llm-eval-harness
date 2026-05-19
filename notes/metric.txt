@@ -1,0 +1,1 @@
+"I used the LLM-as-judge pattern — a separate fast model scores the outputs rather than brittle string matching. It's how production eval systems like RAGAS work. The judge prompt is carefully constrained to return only a float so parsing is deterministic."

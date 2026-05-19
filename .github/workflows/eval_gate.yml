@@ -1,0 +1,42 @@
+name: LLM Eval Gate
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  eval:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Pull Ollama model
+        run: |
+          curl -fsSL https://ollama.com/install.sh | sh
+          ollama serve &
+          sleep 5
+          ollama pull llama3.2
+
+      - name: Run eval harness
+        env:
+          GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
+        run: python main.py evals/tasks/sample_rag.yaml
+        # Exit code 1 from main.py automatically fails this step
+
+      - name: Upload HTML report
+        if: always()   # upload even on failure so you can inspect it
+        uses: actions/upload-artifact@v4
+        with:
+          name: eval-report
+          path: reports/*.html

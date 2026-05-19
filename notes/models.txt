@@ -1,0 +1,1 @@
+"I used the adapter pattern so the eval runner is completely decoupled from model providers. Adding a new model is just writing a new class — the rest of the system doesn't change. It also means I can mock adapters in unit tests without hitting real APIs."

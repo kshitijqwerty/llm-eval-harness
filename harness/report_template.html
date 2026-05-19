@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>{{ task_name }} — Eval Report</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans:wght@300;400;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0a0f;
+    --surface: #111118;
+    --border: #1e1e2e;
+    --accent: #00ff88;
+    --warn: #ffaa00;
+    --danger: #ff4466;
+    --text: #e0e0f0;
+    --muted: #555570;
+    --pass: #00ff88;
+    --fail: #ff4466;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'IBM Plex Sans', sans-serif;
+    font-size: 14px;
+    line-height: 1.6;
+    padding: 40px 24px;
+  }
+
+  .container { max-width: 1100px; margin: 0 auto; }
+
+  /* ── Header ── */
+  header {
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 24px;
+    margin-bottom: 40px;
+    animation: fadeDown 0.5s ease both;
+  }
+
+  .tag {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    color: var(--accent);
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    margin-bottom: 8px;
+  }
+
+  h1 {
+    font-size: 28px;
+    font-weight: 600;
+    letter-spacing: -0.02em;
+    margin-bottom: 4px;
+  }
+
+  .meta {
+    color: var(--muted);
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 12px;
+  }
+
+  /* ── Summary Cards ── */
+  .summary-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 12px;
+    margin-bottom: 40px;
+    animation: fadeDown 0.5s 0.1s ease both;
+  }
+
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 20px;
+  }
+
+  .card-label {
+    font-size: 11px;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    margin-bottom: 8px;
+    font-family: 'IBM Plex Mono', monospace;
+  }
+
+  .card-value {
+    font-size: 28px;
+    font-weight: 600;
+    font-family: 'IBM Plex Mono', monospace;
+    color: var(--accent);
+  }
+
+  .card-value.warn  { color: var(--warn); }
+  .card-value.danger { color: var(--danger); }
+
+  /* ── CI Gate Banner ── */
+  .gate {
+    padding: 14px 20px;
+    border-radius: 8px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 13px;
+    font-weight: 600;
+    margin-bottom: 40px;
+    letter-spacing: 0.05em;
+    animation: fadeDown 0.5s 0.15s ease both;
+  }
+  .gate.pass { background: #00ff8815; border: 1px solid var(--pass); color: var(--pass); }
+  .gate.fail { background: #ff446615; border: 1px solid var(--fail); color: var(--fail); }
+
+  /* ── Per-Model Section ── */
+  .model-section {
+    margin-bottom: 48px;
+    animation: fadeDown 0.5s 0.2s ease both;
+  }
+
+  .model-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 16px;
+  }
+
+  .model-name {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--accent);
+    background: #00ff8812;
+    border: 1px solid #00ff8830;
+    padding: 4px 12px;
+    border-radius: 4px;
+  }
+
+  /* ── Table ── */
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+  }
+
+  thead th {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    padding: 10px 14px;
+    text-align: left;
+    border-bottom: 1px solid var(--border);
+  }
+
+  tbody tr {
+    border-bottom: 1px solid var(--border);
+    transition: background 0.15s;
+  }
+
+  tbody tr:hover { background: #ffffff05; }
+
+  td {
+    padding: 14px;
+    vertical-align: top;
+  }
+
+  .case-id {
+    font-family: 'IBM Plex Mono', monospace;
+    color: var(--muted);
+    font-size: 12px;
+    white-space: nowrap;
+  }
+
+  .question-text { color: var(--text); max-width: 260px; }
+
+  .answer-text {
+    color: #9090b0;
+    font-size: 12px;
+    max-width: 280px;
+    font-style: italic;
+  }
+
+  /* ── Score Bars ── */
+  .score-cell { white-space: nowrap; }
+
+  .score-bar-wrap {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 4px;
+  }
+
+  .score-label {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    color: var(--muted);
+    width: 28px;
+  }
+
+  .bar-bg {
+    width: 80px;
+    height: 5px;
+    background: var(--border);
+    border-radius: 3px;
+    overflow: hidden;
+  }
+
+  .bar-fill {
+    height: 100%;
+    border-radius: 3px;
+    transition: width 0.6s ease;
+  }
+
+  .bar-fill.good  { background: var(--accent); }
+  .bar-fill.warn  { background: var(--warn); }
+  .bar-fill.bad   { background: var(--danger); }
+
+  .score-num {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    width: 30px;
+    text-align: right;
+  }
+
+  /* ── Status Badge ── */
+  .badge {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    font-weight: 600;
+    padding: 3px 10px;
+    border-radius: 4px;
+    letter-spacing: 0.05em;
+  }
+  .badge.pass { background: #00ff8815; color: var(--pass); border: 1px solid #00ff8830; }
+  .badge.fail { background: #ff446615; color: var(--fail); border: 1px solid #ff446630; }
+
+  .latency {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 12px;
+    color: var(--muted);
+    white-space: nowrap;
+  }
+
+  @keyframes fadeDown {
+    from { opacity: 0; transform: translateY(-10px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <header>
+    <div class="tag">LLM Eval Harness</div>
+    <h1>{{ task_name }}</h1>
+    <div class="meta">Generated {{ generated_at }} &nbsp;·&nbsp; {{ total_runs }} runs &nbsp;·&nbsp; {{ providers|join(', ') }}</div>
+  </header>
+
+  <!-- Summary Cards -->
+  <div class="summary-grid">
+    <div class="card">
+      <div class="card-label">Total Runs</div>
+      <div class="card-value">{{ total_runs }}</div>
+    </div>
+    <div class="card">
+      <div class="card-label">Passed</div>
+      <div class="card-value">{{ passed_runs }}</div>
+    </div>
+    <div class="card">
+      <div class="card-label">Avg Faithfulness</div>
+      <div class="card-value {{ 'danger' if avg_faithfulness < 0.6 else 'warn' if avg_faithfulness < 0.8 else '' }}">
+        {{ "%.2f"|format(avg_faithfulness) }}
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-label">Avg Relevance</div>
+      <div class="card-value {{ 'danger' if avg_relevance < 0.6 else 'warn' if avg_relevance < 0.8 else '' }}">
+        {{ "%.2f"|format(avg_relevance) }}
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-label">Avg Hallucination</div>
+      <div class="card-value {{ 'danger' if avg_hallucination > 0.25 else 'warn' if avg_hallucination > 0.1 else '' }}">
+        {{ "%.2f"|format(avg_hallucination) }}
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-label">Avg Latency</div>
+      <div class="card-value">{{ "%.0f"|format(avg_latency) }}<span style="font-size:14px;color:var(--muted)">ms</span></div>
+    </div>
+  </div>
+
+  <!-- CI Gate Banner -->
+  {% if ci_passed %}
+  <div class="gate pass">✓ CI GATE PASSED — hallucination rate within threshold ({{ "%.2f"|format(avg_hallucination) }} ≤ 0.25)</div>
+  {% else %}
+  <div class="gate fail">✗ CI GATE FAILED — hallucination rate exceeds threshold ({{ "%.2f"|format(avg_hallucination) }} > 0.25)</div>
+  {% endif %}
+
+  <!-- Per-Model Tables -->
+  {% for provider, rows in results_by_provider.items() %}
+  <div class="model-section">
+    <div class="model-header">
+      <span class="model-name">{{ provider }}</span>
+    </div>
+
+    <table>
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>Question</th>
+          <th>Answer</th>
+          <th>Scores</th>
+          <th>Latency</th>
+          <th>Status</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for r in rows %}
+        <tr>
+          <td class="case-id">{{ r.case_id }}</td>
+          <td class="question-text">{{ r.question }}</td>
+          <td class="answer-text">{{ r.actual[:120] }}{% if r.actual|length > 120 %}…{% endif %}</td>
+          <td class="score-cell">
+            {% for label, val, invert in [('faith', r.faithfulness, false), ('rel', r.relevance, false), ('hall', r.hallucination, true)] %}
+            <div class="score-bar-wrap">
+              <span class="score-label">{{ label }}</span>
+              <div class="bar-bg">
+                <div class="bar-fill {{ 'bad' if (invert and val > 0.25) or (not invert and val < 0.6) else 'warn' if (invert and val > 0.1) or (not invert and val < 0.8) else 'good' }}"
+                     style="width: {{ (val * 100)|int }}%"></div>
+              </div>
+              <span class="score-num">{{ "%.2f"|format(val) }}</span>
+            </div>
+            {% endfor %}
+          </td>
+          <td class="latency">{{ "%.0f"|format(r.latency_ms) }}ms</td>
+          <td><span class="badge {{ 'pass' if r.passed else 'fail' }}">{{ 'PASS' if r.passed else 'FAIL' }}</span></td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% endfor %}
+
+</div>
+</body>
+</html>

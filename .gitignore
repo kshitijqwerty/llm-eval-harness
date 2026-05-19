@@ -1,0 +1,30 @@
+# Environment
+.env
+.env.*
+
+# Vector store
+.chroma/
+
+# Eval reports
+reports/
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+dist/
+build/
+.venv/
+venv/
+
+# Models cache
+.cache/
+models/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
