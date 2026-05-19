@@ -113,9 +113,63 @@ def run_task(yaml_path: str) -> list[EvalResult]:
     else:
         console.print("\n  [bold green]✓ CI GATE PASSED")
 
-    # ── Generate HTML report ──────────────────────────────────────
+    # Persist to Postgres
+    from harness.db import init_db, SessionLocal, EvalRun, EvalResultRow
+
+    init_db()   # creates tables if first run
+
+    total    = len(results)
+    passed   = sum(1 for r in results if r.passed)
+    avg_hall = sum(r.hallucination for r in results) / total if total else 0
+    avg_faith= sum(r.faithfulness  for r in results) / total if total else 0
+    avg_rel  = sum(r.relevance     for r in results) / total if total else 0
+    avg_lat  = sum(r.latency_ms    for r in results) / total if total else 0
+    ci_ok    = avg_hall <= 0.25
+
+    db = SessionLocal()
+    try:
+        run = EvalRun(
+            task_name=task["name"],
+            mode=task.get("mode", "direct"),
+            ci_passed=ci_ok,
+            avg_hallucination=avg_hall,
+            avg_faithfulness=avg_faith,
+            avg_relevance=avg_rel,
+            avg_latency_ms=avg_lat,
+            total_cases=total,
+            passed_cases=passed,
+        )
+        db.add(run)
+        db.flush()   # get run.id before committing
+
+        for r in results:
+            db.add(EvalResultRow(
+                run_id=run.id,
+                case_id=r.case_id,
+                model_id=r.model_id,
+                question=r.question,
+                context=r.context,
+                expected=r.expected,
+                actual=r.actual,
+                faithfulness=r.faithfulness,
+                relevance=r.relevance,
+                hallucination=r.hallucination,
+                latency_ms=r.latency_ms,
+                passed=r.passed,
+            ))
+
+        db.commit()
+        console.print(f"  [bold]Run saved:[/] id={run.id}")
+
+    except Exception as e:
+        db.rollback()
+        console.print(f"  [yellow]DB save failed (non-fatal): {e}")
+    finally:
+        db.close()
+
+    # HTML report
     from harness.reporter import generate_report
     report_path = generate_report(task["name"], results)
-    console.print(f"\n  [bold]Report saved:[/] {report_path}")
+    console.print(f"  [bold]Report saved:[/] {report_path}")
 
     return results
