@@ -11,7 +11,7 @@ def load_task(yaml_path: str) -> dict:
     """Load and validate an eval task YAML file"""
     path = Path(yaml_path)
     if not path.exists():
-        raise FileExistsError(f"Task file not found: {yaml_path}")
+        raise FileNotFoundError(f"Task file not found: {yaml_path}")
     with open(path) as f:
         task = yaml.safe_load(f)
     
@@ -23,6 +23,7 @@ def load_task(yaml_path: str) -> dict:
     
     return task
 
+
 def run_task(yaml_path: str) -> list[EvalResult]:
     """
     Main Entry point, run all cases x all providers
@@ -31,11 +32,24 @@ def run_task(yaml_path: str) -> list[EvalResult]:
 
     task = load_task(yaml_path)
     results: list[EvalResult] = []
+    is_rag = task.get("mode") == "rag"
+
+    # Set up RAG pipeline if needed
+    rag = None
+    if is_rag:
+        from harness.rag import RAGPipeline
+        console.print("[cyan]Initialising RAG pipeline...")
+        rag = RAGPipeline(collection_name=task["name"])
+        for doc_path in task.get("documents", []):
+            n = rag.ingest_file(doc_path)
+            console.print(f"  Ingested [bold]{doc_path}[/] → {n} chunks")
+        console.print()
 
     console.rule(f"[bold cyan]Eval Task: {task['name']}")
-    console.print(f"    Providers   :   {task['model_providers']}")
-    console.print(f"    Cases       :   {len(task['cases'])}")
-    console.print(f"    Total runs  :   {len(task['model_providers']) * len(task['cases'])}\n")
+    console.print(f"  Mode      : {'RAG' if is_rag else 'Direct'}")
+    console.print(f"  Providers : {task['model_providers']}")
+    console.print(f"  Cases     : {len(task['cases'])}")
+    console.print(f"  Total runs: {len(task['model_providers']) * len(task['cases'])}\n")
 
     for provider in task["model_providers"]:
         console.print(f"[bold yellow] Running provider: {provider}")
@@ -48,13 +62,27 @@ def run_task(yaml_path: str) -> list[EvalResult]:
 
         for case in track(task["cases"], description=f"  {provider}"):
             try:
-                result = evaluate_case(
-                    case_id=case["id"],
-                    question=case["question"],
-                    context=case["context"],
-                    expected=case["expected"],
-                    adapter=adapter,
-                )
+                if is_rag:
+                    # RAG mode: retrieve context live, then score
+                    actual, retrieved_context = rag.answer(case["question"], adapter)
+                    result = evaluate_case(
+                        case_id=case["id"],
+                        question=case["question"],
+                        context=retrieved_context,   # ← what was actually retrieved
+                        expected=case["expected"],
+                        adapter=adapter,
+                    )
+                    # Override actual with the RAG-generated answer
+                    result.actual = actual
+                else:
+                    result = evaluate_case(
+                        case_id=case["id"],
+                        question=case["question"],
+                        context=case["context"],
+                        expected=case["expected"],
+                        adapter=adapter,
+                    )
+
                 results.append(result)
 
                 # Live feedback per case

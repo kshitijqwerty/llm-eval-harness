@@ -1,0 +1,26 @@
+name: rag_support_eval
+description: Tests RAG pipeline over support policy documents
+mode: rag                          # ← new field — triggers RAG mode
+documents:
+  - docs/support_policy.txt        # can list multiple files or PDFs
+
+model_providers:
+  - ollama
+  - groq
+
+cases:
+  - id: r001
+    question: "What is the refund policy for digital products?"
+    expected: "Digital products are non-refundable once downloaded, with exceptions for defective items."
+
+  - id: r002
+    question: "How long does express shipping take?"
+    expected: "Express shipping takes 1-2 business days."
+
+  - id: r003
+    question: "Does the company sell user data?"
+    expected: "No, user data is never sold to third parties."
+
+  - id: r004
+    question: "How long are accounts kept after inactivity?"
+    expected: "Accounts inactive for 2 years may be deleted after notice."
