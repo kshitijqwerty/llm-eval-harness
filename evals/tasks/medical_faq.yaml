@@ -1,0 +1,30 @@
+name: medical_faq_eval
+description: Tests RAG pipeline over a medical FAQ document
+mode: rag
+documents:
+  - docs/medical_faq.txt
+
+model_providers:
+  - ollama
+  - groq
+
+cases:
+  - id: m001
+    question: "What should I do if I miss a dose of my medication?"
+    expected: "Take the missed dose as soon as you remember, unless it is almost time for your next dose. Never double up doses."
+
+  - id: m002
+    question: "Can I drink alcohol while taking antibiotics?"
+    expected: "It is generally advised to avoid alcohol while taking antibiotics as it can reduce effectiveness and increase side effects."
+
+  - id: m003
+    question: "What are common side effects of ibuprofen?"
+    expected: "Common side effects include stomach upset, nausea, heartburn, and dizziness. Serious side effects include gastrointestinal bleeding."
+
+  - id: m004
+    question: "How should I store insulin?"
+    expected: "Unopened insulin should be stored in the refrigerator. Once opened, it can be kept at room temperature for up to 28 days."
+
+  - id: m005
+    question: "When should I go to the emergency room for chest pain?"
+    expected: "Go to the emergency room immediately for chest pain, especially if accompanied by shortness of breath, sweating, or pain radiating to the arm or jaw."
